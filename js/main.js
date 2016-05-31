@@ -1,152 +1,80 @@
 +function ($) { "use strict";
 
-    /**
-    * Portfolio constructor
-    */
-    function Portfolio () {}
+  /**
+   * The zoom service
+   */
+  function ZoomService () {
+    this._activeZoom            =
+    this._initialScrollPosition =
+    this._initialTouchPosition  =
+    this._touchMoveListener     = null
 
-    Portfolio.prototype.init = function() {
-      this.showServiceDescription();
-    }
+    this._$document = $(document)
+    this._$window   = $(window)
+    this._$body     = $(document.body)
 
-    Portfolio.prototype.showServiceDescription = function() {
-      $('.service-list li ').hover(function() {
-        $(this).children('.service-description').removeClass('hide').addClass('show');
-      }, function() {
-        $(this).children('.service-description').removeClass('show').addClass('hide');
-      });
-    }
-
-    /**
-    * List of art projects
-    */
-    function ArtWork () {
-        this.all_work = [
-            {'name': 'Graffiti Sunrise','src': 'graffiti_sunset.jpg', 'size': '12" X 24"', 'sold': 'Not for sale', 'tag': 'expressionism'},
-            {'name': 'Eruption','src': 'eruption.jpg', 'size': '12" X 24"', 'sold': '', 'tag': 'expressionism'},
-            {'name': 'Core Temper','src': 'earths_shake.jpg', 'size': '12" X 24"', 'sold': '', 'tag': 'expressionism'},
-            {'name': 'Infinity','src': 'infinity.jpg', 'size': '18" X 24"', 'sold': '', 'tag': 'expressionism'},
-            {'name': 'When The Colors Meet','src': 'when_the_colors_meet.jpg', 'size': '8" X 10"', 'sold': '', 'tag': 'expressionism'},
-            {'name': 'Untitled','src': 'untitled_3.jpg', 'size': '16" X 16"', 'sold': '', 'tag': 'slang'},
-            {'name': 'Burnt Toast','src': 'untitled.jpg', 'size': '16" X 20"', 'sold': '', 'tag': 'expressionism'},
-            {'name': 'Shower of Hope','src': 'shower_of_hope.jpg', 'size': '12" X 24"', 'sold': 'Sold', 'tag': 'expressionism'},
-            {'name': 'Ocean Effect','src': 'ocean_effect.jpg', 'size': '18" X 24"', 'sold': '', 'tag': 'expressionism'},
-            {'name': 'Untitled','src': 'untitled_5.jpg', 'size': '18" X 24"', 'sold': '', 'tag': 'expressionism'},
-            {'name': 'Untitled','src': 'untitled_4.jpg', 'size': '12" X 24"', 'sold': '', 'tag': 'expressionism'},
-            {'name': 'Color in the Streets','src': 'color_streets.jpg', 'size': '12" X 24"', 'sold': 'Sold', 'tag': 'expressionism'},
-        ];
-    }
-
-    /**
-    * The html template for each art piece
-    */
-    ArtWork.prototype.template = function(art_work) {
-        return '<img src="art/' + art_work.src + '" alt="' + art_work.name + '" class="art-piece"" data-action="zoom"/>'
-    }
-
-    /**
-    * Appends the provided art work to the page
-    */
-    ArtWork.prototype.append = function(art_work) {
-        $('#art').html(''); // remove previous results
-        for (var i = 0; i < art_work.length; i++) {
-            var piece = art_work[i];
-            $('#art').append(this.template(piece));
-        }
-    }
-
-    /**
-    * Uses the selected art tag name to filter out the art pieces
-    */
-    ArtWork.prototype.applyFilter = function(tag) {
-        var all_work = this.all_work;
-        return all_work.filter(function(elem, index, arr) {
-            return tag === 'all' ? all_work : elem.tag === tag;
-        });
-    }
-
-    /**
-    * Initializes the event listeners and appends all art work on page load
-    */
-    ArtWork.prototype.init = function() {
-        this.append(this.all_work);
-    }
-
-    /**
-    * The zoom service
-    */
-    function ZoomService () {
-        this._activeZoom            = null;
-        this._initialScrollPosition = null;
-        this._initialTouchPosition  = null;
-        this._touchMoveListener     = null;
-
-        this._$document = $(document);
-        this._$window   = $(window);
-        this._$body     = $(document.body);
-
-        this._boundClick = $.proxy(this._clickHandler, this);
-    }
+    this._boundClick = $.proxy(this._clickHandler, this)
+  }
 
   ZoomService.prototype.listen = function () {
     this._$body.on('click', '[data-action="zoom"]', $.proxy(this._zoom, this))
   }
 
   ZoomService.prototype._zoom = function (e) {
-    var target = e.target;
+    var target = e.target
 
-    if (!target || target.tagName != 'IMG') return;
+    if (!target || target.tagName != 'IMG') return
 
-    if (this._$body.hasClass('zoom-overlay-open')) return;
+    if (this._$body.hasClass('zoom-overlay-open')) return
 
     if (e.metaKey || e.ctrlKey) {
-      return window.open((e.target.getAttribute('data-original') || e.target.src), '_blank');
+      return window.open((e.target.getAttribute('data-original') || e.target.src), '_blank')
     }
 
-    if (target.width >= ($(window).width() - Zoom.OFFSET)) return;
+    if (target.width >= ($(window).width() - Zoom.OFFSET)) return
 
-        this._activeZoomClose(true); // check if we need to close zoom
+    this._activeZoomClose(true)
 
-        this._activeZoom = new Zoom(target); // create new zoom instance, pass in the clicked image
-        this._activeZoom.zoomImage();
+    this._activeZoom = new Zoom(target)
+    this._activeZoom.zoomImage()
 
-        // todo(fat): probably worth throttling this
-        this._$window.on('scroll.zoom', $.proxy(this._scrollHandler, this))
+    // todo(fat): probably worth throttling this
+    this._$window.on('scroll.zoom', $.proxy(this._scrollHandler, this))
 
-        this._$document.on('keyup.zoom', $.proxy(this._keyHandler, this))
-        this._$document.on('touchstart.zoom', $.proxy(this._touchStart, this))
+    this._$document.on('keyup.zoom', $.proxy(this._keyHandler, this))
+    this._$document.on('touchstart.zoom', $.proxy(this._touchStart, this))
 
-        // we use a capturing phase here to prevent unintended js events
-        // sadly no useCapture in jquery api (http://bugs.jquery.com/ticket/14953)
-        if (document.addEventListener) {
-            document.addEventListener('click', this._boundClick, true)
-        } else {
-            document.attachEvent('onclick', this._boundClick, true)
-        }
+    // we use a capturing phase here to prevent unintended js events
+    // sadly no useCapture in jquery api (http://bugs.jquery.com/ticket/14953)
+    if (document.addEventListener) {
+      document.addEventListener('click', this._boundClick, true)
+    } else {
+      document.attachEvent('onclick', this._boundClick, true)
+    }
 
     if ('bubbles' in e) {
-        if (e.bubbles) e.stopPropagation();
+      if (e.bubbles) e.stopPropagation()
     } else {
-        // Internet Explorer before version 9
-        e.cancelBubble = true;
+      // Internet Explorer before version 9
+      e.cancelBubble = true
     }
   }
 
   ZoomService.prototype._activeZoomClose = function (forceDispose) {
-    if (!this._activeZoom) return; // is null - cant close if we are in the process of zooming in!
+    if (!this._activeZoom) return
 
     if (forceDispose) {
-      this._activeZoom.dispose();
-    } else { // forceDispose is undefined when closing
-      this._activeZoom.close();
+      this._activeZoom.dispose()
+    } else {
+      this._activeZoom.close()
     }
 
-    this._$window.off('.zoom');
-    this._$document.off('.zoom');
+    this._$window.off('.zoom')
+    this._$document.off('.zoom')
 
-    document.removeEventListener('click', this._boundClick, true);
+    document.removeEventListener('click', this._boundClick, true)
 
-    this._activeZoom = null;
+    this._activeZoom = null
   }
 
   ZoomService.prototype._scrollHandler = function (e) {
@@ -186,53 +114,53 @@
   }
 
 
-    /**
-    * The zoom object
-    */
-    function Zoom (img) {
-        this._fullHeight      = null;
-        this._fullWidth       = null;
-        this._overlay         = null;
-        this._targetImageWrap = null;
+  /**
+   * The zoom object
+   */
+  function Zoom (img) {
+    this._fullHeight      =
+    this._fullWidth       =
+    this._overlay         =
+    this._targetImageWrap = null
 
-        this._targetImage = img;
+    this._targetImage = img
 
-        this._$body = $(document.body);
-    }
+    this._$body = $(document.body)
+  }
 
-    Zoom.OFFSET = 80
-    Zoom._MAX_WIDTH = 2560
-    Zoom._MAX_HEIGHT = 4096
+  Zoom.OFFSET = 80
+  Zoom._MAX_WIDTH = 2560
+  Zoom._MAX_HEIGHT = 4096
 
-    Zoom.prototype.zoomImage = function () {
-        var img = document.createElement('img');
-        img.onload = $.proxy(function () {
-            this._fullHeight = Number(img.height);
-            this._fullWidth = Number(img.width);
-            this._zoomOriginal();
-        }, this);
-        img.src = this._targetImage.src;
-    }
+  Zoom.prototype.zoomImage = function () {
+    var img = document.createElement('img')
+    img.onload = $.proxy(function () {
+      this._fullHeight = Number(img.height)
+      this._fullWidth = Number(img.width)
+      this._zoomOriginal()
+    }, this)
+    img.src = this._targetImage.src
+  }
 
-    Zoom.prototype._zoomOriginal = function () {
-        this._targetImageWrap           = document.createElement('div');
-        this._targetImageWrap.className = 'zoom-img-wrap';
+  Zoom.prototype._zoomOriginal = function () {
+    this._targetImageWrap           = document.createElement('div')
+    this._targetImageWrap.className = 'zoom-img-wrap'
 
-        this._targetImage.parentNode.insertBefore(this._targetImageWrap, this._targetImage);
-        this._targetImageWrap.appendChild(this._targetImage);
+    this._targetImage.parentNode.insertBefore(this._targetImageWrap, this._targetImage)
+    this._targetImageWrap.appendChild(this._targetImage)
 
-        $(this._targetImage)
-        .addClass('zoom-img') // apply css for active zoom image
-        .attr('data-action', 'zoom-out');
+    $(this._targetImage)
+      .addClass('zoom-img')
+      .attr('data-action', 'zoom-out')
 
-        this._overlay           = document.createElement('div');
-        this._overlay.className = 'zoom-overlay';
+    this._overlay           = document.createElement('div')
+    this._overlay.className = 'zoom-overlay'
 
-        document.body.appendChild(this._overlay);
+    document.body.appendChild(this._overlay)
 
-        this._calculateZoom();
-        this._triggerAnimation();
-    }
+    this._calculateZoom()
+    this._triggerAnimation()
+  }
 
   Zoom.prototype._calculateZoom = function () {
     this._targetImage.offsetWidth // repaint before animating
@@ -344,15 +272,7 @@
 
   // wait for dom ready (incase script included before body)
   $(function () {
-    new ArtWork().init();
-    new ZoomService().listen();
-    new Portfolio().init();
-
-    $(".instagram").instagram({
-      userId: '218149027',
-      accessToken: '218149027.2358389.d2f2f14fef694c7fa3db5241526d52ef',
-      image_size: 'standard_resolution'
-    });
-  });
+    new ZoomService().listen()
+  })
 
 }(jQuery)
